@@ -8,7 +8,7 @@ OBJ = obj/def.o \
 CFLAGS= -Iinclude -g
 all:main
 
-tetris:$(OBJ)
+main:$(OBJ)
 	gcc $(CFLAGS) $^ -o bin/$@ 
 
 obj/%.o : src/%.c
