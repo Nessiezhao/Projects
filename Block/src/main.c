@@ -31,16 +31,14 @@ int main()
             read(tfd,&clk,sizeof clk);
             timer_tetris(&t);
         }
-        if(FD_ISSET(kfd,&rset)){
-            tetris(&t);
-        }
+    
         if(FD_ISSET(kfd,&rset)){
             if(tetris(&t) == 1){
                 break;
             }
         }
         printf("\033[?25h");
-        recover_keyboard();
     }
+    recover_keyboard();
     return 0;
 }
