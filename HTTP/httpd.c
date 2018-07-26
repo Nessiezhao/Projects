@@ -164,6 +164,32 @@ void echo_error(int sock,int error_code)
         break;
     }
 }
+//网页显示
+void echo_info(int sock,char* path,int size,int* error_code)
+{
+    clear_header(sock);
+    //响应
+    //sendfile高效，因为read需要先把数据读到内核，然后从内核把数据读到用户
+    //但是sendfile不用在用户间来回操作，只在两个文件描述符之间来回操作，所以更加高效
+    //1.打开文件
+   int fd = open(path,O_RDONLY);
+   if(fd < 0)
+   {
+       //文件打开失败
+       *error_code = 404;
+       return;
+   }
+   char line[MAX];
+   sprintf(line,"HTTP/1.0 200 OK\r\n");
+   //将状态行发出去
+   send(sock,line,strlen(line),0);
+   sprintf(line,"Content-Type:text/html;charset=ISO-8859-1\r\n");
+   send(sock,line,strlen(line),0);
+   sprintf(line,"\r\n");
+   send(sock,line,strlen(line),0);
+   sendfile(sock,fd,NULL,size);
+   close(fd);
+}
 static void* handler_request(void* arg)
 {
     int* sock1 = (int*)arg;
@@ -318,10 +344,11 @@ static void* handler_request(void* arg)
 end:
     if(errCode != 200)
     {
-        echo_error(errCode);
+        echo_error(sock,errCode);
     }
     close(sock);//作用：1.回收了本地描述符资源   2.关闭了连接
 }
+
 int main(int argc,char* argv[])
 {
     if(argc != 2)
@@ -353,4 +380,5 @@ int main(int argc,char* argv[])
         //强转成void* 以只拷贝的形式传过去)
         pthread_detach(id);//分离，继续获取新连接
     }
+    return 0;
 }
