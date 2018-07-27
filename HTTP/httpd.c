@@ -190,6 +190,115 @@ void echo_info(int sock,char* path,int size,int* error_code)
    sendfile(sock,fd,NULL,size);
    close(fd);
 }
+
+int exe_cgi(int sock,char* path,char* method,char* query_string)
+{
+    //判断是哪个方法
+    char line[MAX];
+    int content_length = -1;
+    char method_env[MAX/32];
+    char query_string_env[MAX];
+    char content_length_env[MAX/16];
+    if(strcasecmp(method,"GET") == 0)
+    {
+        clear_header(sock);
+        //参数在query_string中
+    }
+    if(strcasecmp(method,"POST") == 0)
+    {
+        //POST
+        do
+        {
+            get_line(sock,line,sizeof(line));
+            if(strncmp(line,"Content-Length:",16) == 0)
+            {
+                content_length = atoi(line + 16);
+            }
+        }while(strcmp(line,"\n") != 0);
+        //再读就读到正文了
+        if(content_length == -1)
+        {
+            //说明没有读到Content-Length,出错了
+            return 404;
+        }
+    }
+    sprintf(line,"HTTP/1.0 200 OK\r\n");
+    //将状态行发出去
+    send(sock,line,strlen(line),-1);
+    sprintf(line,"Content-Type:text/html;charset=ISO-8859-1\r\n");
+    send(sock,line,strlen(line),0);
+    sprintf(line,"\r\n");
+    send(sock,line,strlen(line),0);
+    //父进程要拿到子进程的运行结果，此时就需要进程间通信
+    //让父进程将数据拿到写给子进程，子进程将运行结果写给父进程
+    int input[2];
+    int output[2];
+
+    pipe(input);
+    pipe(output);
+
+    pid_t id = fork();
+    if(id < 0)
+    {
+        return 404;
+    }
+    else if(id == 0)
+    {
+        //程序替换不会替换环境变量
+        //子进程替换
+        //子进程要从管道中读
+        close(input[1]);
+        close(output[0]);
+        //重定向
+        dup2(input[0],0);
+        dup2(output[1],1);
+    
+        //导出环境变量
+        sprintf(method_env,"METHOD = %s",method);
+        putenv(method_env);
+    
+        if(strcasecmp(method,"GET") == 0)
+        {
+            sprintf(query_string_env,"QUERY_STRING = %s",query_string);
+            putenv(query_string_env);
+        }
+        else
+        {
+            sprintf(content_length_env,"CONTENT_LENGTH = %d",content_length);
+            putenv(content_length_env);
+        }
+        execl(path,path,NULL);
+        exit(1);
+    }
+    else
+    {
+        //父进程
+        close(input[0]);
+        close(output[1]);
+        int c;
+        if(strcasecmp(method,"POST") == 0)
+        {
+            int i = 0;
+            while(i < content_length)
+            {
+                read(sock,&c,1);
+                write(input[1],&c,1);
+                i++;
+            }
+        }
+        while(read(output[0],&c,1) > 0)
+        {
+            send(sock,&c,1,0);
+        }
+        //从sock中读数据
+        waitpid(id,NULL,0);
+        //父进程关闭自己的文件描述符
+        close(input[1]);
+        close(output[0]);
+    }
+    return 200;
+    
+}
 static void* handler_request(void* arg)
 {
     int* sock1 = (int*)arg;
