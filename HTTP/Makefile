@@ -1,5 +1,5 @@
 httpd:httpd.c
-	gcc -o $@ $^ -lpthread
+	gcc -o $@ $^ -g -lpthread
 .PHONY:clean
 clean:
 	rm -f httpd

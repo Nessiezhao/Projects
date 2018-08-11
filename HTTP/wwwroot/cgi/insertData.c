@@ -3,6 +3,7 @@
 #include<string.h>
 #include<unistd.h>
 #include<mysql.h>
+
 void InsertData(char* name,char* sex,char* phone)
 {
     MYSQL* mysql_fd = mysql_init(NULL);//获取mysql文件描述符
@@ -25,6 +26,13 @@ void InsertData(char* name,char* sex,char* phone)
     printf("sql:%s\n",sql);
     mysql_close(mysql_fd);//关闭mysql文件描述符
 }
+//#define asd
+#ifdef asd
+int main(){
+    printf("hello world!\n");
+    return 0;
+}
+#else
 int main()
 {
     char data[1024];
@@ -41,7 +49,7 @@ int main()
             int i = 0;
             for(;i < content_length;i++)
             {
-                read(0,data + i,1);
+               read(0,data + i,1);
             }
         }
     }
@@ -60,3 +68,4 @@ int main()
     InsertData(name,sex,phone);
     return 0;
 }
+#endif

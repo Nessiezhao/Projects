@@ -21,7 +21,7 @@
 //监听套接字
 //接收套接字
 //创建多线程处理套接字(分析接收到的套接字的http协议中的方法)
-static void usage(const char* proc)
+static void usage(const char* proc)//用static修饰，只在本函数内部有效//用static修饰，只在本函数内部有效
 {
     printf("Usage:%s port\n",proc);//告诉客户端应该如何使用
 }
@@ -30,14 +30,14 @@ static int startup(int port)
     int sock = socket(AF_INET,SOCK_STREAM,0);
     if(sock < 0)//创建失败
     {
-        //服务器是以后台进行运行的，正常情况下这里不应该perror
+        //服务器是以后台进程运行的，正常情况下这里不应该perror
         //而应该把错误信息打印到日志当中
         perror("socket");
         //创建套接字失败的话就不再继续向下运行
         exit(2);
     }
     //保证服务器断开连接的时候，不能让服务器因为time_wait而不能立即重启
-    //所以要调用setsockopt
+    //所以要调用setsockopt，对套接字属性进行设置
     int opt = 1;
     setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,&opt,sizeof(opt));
     //第一个参数要设置的套接字
@@ -70,7 +70,7 @@ int get_line(int sock,char line[],int size)
     ssize_t s = 0;
     while( i < size-1 && c != '\n')//因为最后一个应该放'\0'所以i要小于size-1
     {
-        s = recv(sock,&c,1,0);//一次读1个
+        s = recv(sock,&c,1,0);//一次读1个，目的:将分隔符进行转化 0：代表以阻塞方式读
         if(s > 0)
         {
             if(c == '\r')//如果c是'\r'
@@ -97,14 +97,18 @@ int get_line(int sock,char line[],int size)
     }
     line[i] = '\0';
     return i;//返回这一行有多少个字符
+    //如果是空行只有'\n'
+    //原因：如果是'\r'窥探下一个字符，是'\n'就再读取所以c变为'\n'
+    //如果窥探的下一个字符不是'\n'就用'\n'替换'\r'
+    //所以无论如何空行读到的都是'\n'
 }
 
 void clear_header(int sock)
 {
-    char line[MAX];
+    char line[MAX] = {0};
     do{
         get_line(sock,line,sizeof(line));
-        printf("%s",line);
+        //printf("%s",line);
     }while(strcmp(line,"\n") != 0);
 }
 void echo_www(int sock,char* path,int size,int *err)
@@ -118,11 +122,15 @@ void echo_www(int sock,char* path,int size,int *err)
         return;
     }
     char line[MAX];
+    printf("fd:%d size:%d\n",fd,size);
     sprintf(line,"HTTP/1.0 200 OK\r\n");
     send(sock,line,strlen(line),0);
-    sprintf(line,"Content-Type:text/html;charset=ISO-8859-1");
+    sprintf(line,"Content_Type: text/html\r\n");
     send(sock,line,strlen(line),0);
     sprintf(line,"\r\n");
+    send(sock,line,strlen(line),0);
+    //sprintf(line,"hello world!\n");
+    //send(sock,line,strlen(line),0);
     sendfile(sock,fd,NULL,size);
     close(fd);
 }
@@ -179,11 +187,11 @@ void echo_info(int sock,char* path,int size,int* error_code)
        *error_code = 404;
        return;
    }
-   char line[MAX];
+   char line[MAX] = {0};
    sprintf(line,"HTTP/1.0 200 OK\r\n");
    //将状态行发出去
    send(sock,line,strlen(line),0);
-   sprintf(line,"Content-Type:text/html;charset=ISO-8859-1\r\n");
+   sprintf(line,"Content_Type:text/html;charset=ISO-8859-1\r\n");
    send(sock,line,strlen(line),0);
    sprintf(line,"\r\n");
    send(sock,line,strlen(line),0);
@@ -194,7 +202,7 @@ void echo_info(int sock,char* path,int size,int* error_code)
 int exe_cgi(int sock,char* path,char* method,char* query_string)
 {
     //判断是哪个方法
-    char line[MAX];
+    char line[MAX] = {0};
     int content_length = -1;
     char method_env[MAX/32];
     char query_string_env[MAX];
@@ -224,8 +232,8 @@ int exe_cgi(int sock,char* path,char* method,char* query_string)
     }
     sprintf(line,"HTTP/1.0 200 OK\r\n");
     //将状态行发出去
-    send(sock,line,strlen(line),-1);
-    sprintf(line,"Content-Type:text/html;charset=ISO-8859-1\r\n");
+    send(sock,line,strlen(line),0);
+    sprintf(line,"Content-Type: text/html;charset=ISO-8859-1\r\n");
     send(sock,line,strlen(line),0);
     sprintf(line,"\r\n");
     send(sock,line,strlen(line),0);
@@ -254,17 +262,17 @@ int exe_cgi(int sock,char* path,char* method,char* query_string)
         dup2(output[1],1);
     
         //导出环境变量
-        sprintf(method_env,"METHOD = %s",method);
+        sprintf(method_env,"METHOD=%s",method);
         putenv(method_env);
     
         if(strcasecmp(method,"GET") == 0)
         {
-            sprintf(query_string_env,"QUERY_STRING = %s",query_string);
+            sprintf(query_string_env,"QUERY_STRING=%s",query_string);
             putenv(query_string_env);
         }
         else
         {
-            sprintf(content_length_env,"CONTENT_LENGTH = %d",content_length);
+            sprintf(content_length_env,"CONTENT_LENGTH=%d",content_length);
             putenv(content_length_env);
         }
         execl(path,path,NULL);
@@ -303,16 +311,16 @@ static void* handler_request(void* arg)
 {
     int* sock1 = (int*)arg;
     int sock = *sock1;
-    char line[MAX];
+    char line[MAX] = {0};
     char method[MAX/32];//方法
     char url[MAX];//请求的资源
     char path[MAX];//资源路径
-    int errCode = 200;
+    int errCode = 200;//状态码
     int cgi = 0;//cgi 通用网关接口，是Http服务内置的一种标准，方便后对Http的功能进行二次扩展
     char* query_string = NULL;
 #if Debug
     do{
-        get_line(sock,line,sizeof(line));
+        get_line(sock,line,sizeof(line));//line -> \r,\n,\r\n -->\n
         printf("%s",line);
     }while(strcmp(line,"\n") != 0);
 #else
@@ -336,24 +344,29 @@ static void* handler_request(void* arg)
         j++;
     }
     method[i] = '\0';
-    if(strcasecmp(method,"GET") == 0)
+    if(strcasecmp(method,"GET") == 0)//忽略大小写比较
     {
         
     }
-    else if(strcasecmp(method,"POST") == 0)
+    else if(strcasecmp(method,"POST") == 0)//一旦是POST方法就要以cgi方式运行
     {
         cgi = 1;
     }
-    else
+    else//出错
     {
         errCode = 404;
         goto end;
     }
-    while(j < (int)sizeof(line) && isspace(line[j]))
+    //走到这里要么是GET方法，要么是POST方法
+    //提取url
+    while(j < (int)sizeof(line) && isspace(line[j]))//此时的j是空格
     {
         j++;
     }
     //j指向一个非空字符
+    
+    
+    //上一次i循环指向method，现在想让i指向url，所以需要把i清0
     i = 0;
     while(i < (int)sizeof(url)-1 && j < (int)sizeof(line) && !isspace(line[j]))
     {
@@ -440,7 +453,7 @@ static void* handler_request(void* arg)
         }
         if(cgi)
         {
-            //exe_cgi();
+            exe_cgi(sock,path,method,query_string);
         }
         else//GET方法并且没有传参
         {
@@ -453,19 +466,20 @@ static void* handler_request(void* arg)
 end:
     if(errCode != 200)
     {
-        echo_error(sock,errCode);
+        echo_error(sock,errCode);//往哪个链接中传，传哪个错误码
     }
     close(sock);//作用：1.回收了本地描述符资源   2.关闭了连接
 }
 
 int main(int argc,char* argv[])
 {
+    //./httpd 80
     if(argc != 2)
     {
         usage(argv[0]);
         return 1;
     }
-    //现在的Http服务器底层是基于Tcp的，所以第一件事一定要有一个listen_sock
+    //现在的Http服务器底层是基于TCP的，所以第一件事一定要有一个listen_sock
     int listen_sock = startup(atoi(argv[1]));//调用start来获得监听套接字
     //监听套接字有了就进行事件处理
     for(;;)
@@ -481,8 +495,9 @@ int main(int argc,char* argv[])
         }
         //获取连接成功
         pthread_t id;
-        pthread_create(&id,NULL,handler_request,(void*)new_sock);//创建线程
-        //线程属性NULL，创建这个线程为了提供服务
+        //printf("获取连接成功！\n");
+        pthread_create(&id,NULL,handler_request,&new_sock);//创建线程
+        //线程属性NULL，创建这个线程为了完成处理请求及其其响应的,提供服务
         //(我们的浏览器在向我发起http请求之前要先建立连接，一旦建立连接
         //那么服务器就获得连接并创建新线程，新线程剩下的工作就是处理请求)
         //new_sock : 处理的是哪一个连接(直接传值的时候可能会遇到一些问题

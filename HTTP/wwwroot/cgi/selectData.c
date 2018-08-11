@@ -19,7 +19,7 @@ void SelectData()
     printf("connect mysql success!\n");
     //下发sql命令
     char sql[1024];
-    sprinf(sql,"select * from studet_info");
+    sprintf(sql,"select * from studet_info");
     mysql_query(mysql_fd,sql);
     //读取结果
     MYSQL_RES* res = mysql_store_result(mysql_fd);
