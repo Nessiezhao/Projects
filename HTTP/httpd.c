@@ -129,8 +129,6 @@ void echo_www(int sock,char* path,int size,int *err)
     send(sock,line,strlen(line),0);
     sprintf(line,"\r\n");
     send(sock,line,strlen(line),0);
-    //sprintf(line,"hello world!\n");
-    //send(sock,line,strlen(line),0);
     sendfile(sock,fd,NULL,size);
     close(fd);
 }
@@ -162,14 +160,23 @@ void echo_error(int sock,int error_code)
 {
     switch(error_code)
     {
-    case 404:
-        bad_request("wwwroot/404.html","HTTP/1.0 404 Not Found\r\n",sock);
-        break;
-    case 505:
-        bad_request("wwwroot/404.html","HTTP/1.0 505 Not Found\r\n",sock);
-        break;
-    default:
-        break;
+        case 400:
+            bad_request("wwwroot/404.html","HTTP/1.0 404 Not Found\r\n",sock);
+            break;
+        case 403:
+            bad_request("wwwroot/404.html","HTTP/1.0 505 Not Found\r\n",sock);
+            break;
+        case 404:
+            bad_request("wwwroot/404.html","HTTP/1.0 505 Not Found\r\n",sock);
+            break;
+        case 500:
+            bad_request("wwwroot/404.html","HTTP/1.0 505 Not Found\r\n",sock);
+            break;
+        case 503:
+            bad_request("wwwroot/404.html","HTTP/1.0 505 Not Found\r\n",sock);
+            break;
+        default:
+            break;
     }
 }
 //网页显示
@@ -218,7 +225,7 @@ int exe_cgi(int sock,char* path,char* method,char* query_string)
         do
         {
             get_line(sock,line,sizeof(line));
-            if(strncmp(line,"Content-Length:",16) == 0)
+            if(strncmp(line,"Content-Length: ",16) == 0)
             {
                 content_length = atoi(line + 16);
             }
@@ -227,7 +234,7 @@ int exe_cgi(int sock,char* path,char* method,char* query_string)
         if(content_length == -1)
         {
             //说明没有读到Content-Length,出错了
-            return 404;
+            return 400;
         }
     }
     sprintf(line,"HTTP/1.0 200 OK\r\n");
@@ -239,8 +246,8 @@ int exe_cgi(int sock,char* path,char* method,char* query_string)
     send(sock,line,strlen(line),0);
     //父进程要拿到子进程的运行结果，此时就需要进程间通信
     //让父进程将数据拿到写给子进程，子进程将运行结果写给父进程
-    int input[2];
-    int output[2];
+    int input[2];//子进程用input来读，父进程用input来写
+    int output[2];//子进程用output来写，父进程用output来读
 
     pipe(input);
     pipe(output);
@@ -248,7 +255,7 @@ int exe_cgi(int sock,char* path,char* method,char* query_string)
     pid_t id = fork();
     if(id < 0)
     {
-        return 404;
+        return 503;
     }
     else if(id == 0)
     {
@@ -258,12 +265,16 @@ int exe_cgi(int sock,char* path,char* method,char* query_string)
         close(input[1]);
         close(output[0]);
         //重定向
+        //程序替换时不会替换文件描述符
+        //文件描述符是属于一个进程打开的一个概念，不是代码和数据,所以不会替换
         dup2(input[0],0);
         dup2(output[1],1);
     
         //导出环境变量
+        //环境变量具有全局特性，会被子进程继承
+        //环境变量也是子进程的数据，在程序替换时不会被替换掉
         sprintf(method_env,"METHOD=%s",method);
-        putenv(method_env);
+        putenv(method_env);//把指定的环境变量导到子进程的地址空间上
     
         if(strcasecmp(method,"GET") == 0)
         {
@@ -275,7 +286,8 @@ int exe_cgi(int sock,char* path,char* method,char* query_string)
             sprintf(content_length_env,"CONTENT_LENGTH=%d",content_length);
             putenv(content_length_env);
         }
-        execl(path,path,NULL);
+        execl(path,path,NULL);//第一个path，要执行谁，第二个往后的参数，要如何执行
+        //什么权限都不用传所以为NULL
         exit(1);
     }
     else
@@ -309,8 +321,8 @@ int exe_cgi(int sock,char* path,char* method,char* query_string)
 }
 static void* handler_request(void* arg)
 {
-    int* sock1 = (int*)arg;
-    int sock = *sock1;
+    int sock1 = (int)arg;
+    int sock = sock1;
     char line[MAX] = {0};
     char method[MAX/32];//方法
     char url[MAX];//请求的资源
@@ -354,7 +366,7 @@ static void* handler_request(void* arg)
     }
     else//出错
     {
-        errCode = 404;
+        errCode = 400;
         goto end;
     }
     //走到这里要么是GET方法，要么是POST方法
@@ -376,6 +388,9 @@ static void* handler_request(void* arg)
     }
     url[i] = '\0';
     //方法要么是GET要么是POST，而且资源已经拿到
+    //GET方法和POST方法在传参形式上不同
+    //GET方法通过url传参，POST方法通过请求正文传参
+    //'?'后面传的是参数，参数内部是 name=value,而多个参数之间用&隔开
     //检测当前是否带问号(GET方法才进行判断)
     //从应用上一种是将资源从网络上拉下来，另一种是将自己的数据提交到网络上，这就叫cgi
     //GET：当向网络上提交数据的时候将数据拼接到URL后
@@ -383,10 +398,9 @@ static void* handler_request(void* arg)
     //如果url中没有参数，正文中也没有参数，则是GET
     //如果url中带参数了，是GET方法
     //如果正文中带参就是POST
-    //如果带参数了，就必须对这个参数进行处理
-    //如果带参数了，就需要以cgi方式运行
+    //如果带参数了，就必须对这个参数进行处理,就需要以cgi方式运行
     //如果是POST，就必须以cgi方式运行
-    //
+    
     //判断方法：要么是GET，要么是POST
     //在http请求中如果要用get方法进行传参，那么就会给其在url中加上'?'
     //'?'左侧是访问的资源，'?'右侧是给资源的参数
@@ -419,14 +433,14 @@ static void* handler_request(void* arg)
     //url->wwwroot/a/b/c.html或者url->wwwroot
     //拼接路径
     sprintf(path,"wwwroot%s",url);
-    if(path[strlen(path)-1] == '/')
+    if(path[strlen(path)-1] == '/')//如果最后一个字符是'/'就把首页给拼上
     {
         strcat(path,HOME_PAGE);
     }
     //判断要请求的资源是否存在
     printf("method = %s,path: %s\n",method,path);
     struct stat st;
-    if(stat(path,&st) < 0)
+    if(stat(path,&st) < 0)//要请求的资源
     {
         //说明访问的文件不存在
         errCode = 404;
@@ -437,7 +451,7 @@ static void* handler_request(void* arg)
     {
         if(S_ISDIR(st.st_mode))//如果是目录
         {
-            strcat(path,HOME_PAGE);
+            strcat(path,HOME_PAGE);//如果是目录就把首页拼上
         }
         //文件找到了
         //但是找到不一定是正确的
@@ -449,8 +463,11 @@ static void* handler_request(void* arg)
             {
                 cgi = 1;
             }
-
         }
+            //能判断出三点
+            //第一资源肯定存在
+            //第二资源肯定不是目录
+            //第三资源肯定没有可执行程序
         if(cgi)
         {
             exe_cgi(sock,path,method,query_string);
@@ -496,7 +513,7 @@ int main(int argc,char* argv[])
         //获取连接成功
         pthread_t id;
         //printf("获取连接成功！\n");
-        pthread_create(&id,NULL,handler_request,&new_sock);//创建线程
+        pthread_create(&id,NULL,handler_request,(void*)new_sock);//创建线程
         //线程属性NULL，创建这个线程为了完成处理请求及其其响应的,提供服务
         //(我们的浏览器在向我发起http请求之前要先建立连接，一旦建立连接
         //那么服务器就获得连接并创建新线程，新线程剩下的工作就是处理请求)

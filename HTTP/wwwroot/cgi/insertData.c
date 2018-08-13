@@ -36,7 +36,7 @@ int main(){
 int main()
 {
     char data[1024];
-    if(getenv("METHOD"))
+    if(getenv("METHOD"))//没有的话返回NULL
     {
         if(strcasecmp("GET",getenv("METHOD")) == 0)
         {
