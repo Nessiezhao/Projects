@@ -150,6 +150,7 @@ void bad_request(const char* path,const char* head,int sock)
     //响应报头正文
     const char* status_line = head;
     send(sock,status_line,strlen(status_line),0);
+    printf("%s\n",status_line);
     const char* content_type = "Content-Type:text/html;charset=ISO-8859-1\r\n";
     send(sock,content_type,strlen(content_type),0);
     send(sock,"\r\n",2,0);
@@ -161,19 +162,19 @@ void echo_error(int sock,int error_code)
     switch(error_code)
     {
         case 400:
-            bad_request("wwwroot/404.html","HTTP/1.0 404 Not Found\r\n",sock);
+            bad_request("wwwroot/400.html","HTTP/1.0 404 Not Found\r\n",sock);
             break;
         case 403:
-            bad_request("wwwroot/404.html","HTTP/1.0 505 Not Found\r\n",sock);
+            bad_request("wwwroot/403.html","HTTP/1.0 404 Not Found\r\n",sock);
             break;
         case 404:
-            bad_request("wwwroot/404.html","HTTP/1.0 505 Not Found\r\n",sock);
+            bad_request("wwwroot/404.html","HTTP/1.0 404 Not Found\r\n",sock);
             break;
         case 500:
-            bad_request("wwwroot/404.html","HTTP/1.0 505 Not Found\r\n",sock);
+            bad_request("wwwroot/500.html","HTTP/1.0 404 Not Found\r\n",sock);
             break;
         case 503:
-            bad_request("wwwroot/404.html","HTTP/1.0 505 Not Found\r\n",sock);
+            bad_request("wwwroot/503.html","HTTP/1.0 404 Not Found\r\n",sock);
             break;
         default:
             break;
