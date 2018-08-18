@@ -2,25 +2,62 @@
 <html lang = "zh-cn">
     <meta charset="utf-8">
     <body>
+        <body background=/tupian/background.jpg>
+        <body style="background-repeat:no-repeat;
+        background-size:100% 100%;
+        background-attachment:fixed;">
      <h1>welcome to my http server!</h1>
-     <h1>欢迎你！</h1>
-     <form name="input"action="/cgi/insertData"method="get">
-         name:<input type="text" name="name"><br>
+     <form name="input" action="/cgi/insertData"method="get">
+         name:<input type="text" name="name">
          <br>
          <br>
          sex:<input type="text" name="sex">
          <br>
          <br>
-         phone:<input type="text" name="phone"><br>
+         phone:<input type="text" name="phone">
          <br>
          <br>
          <input type="submit" value="Submit">
+         <input type="submit" value="Select" formaction="/cgi/selecttest">
+         <br>
+         <br>
+         <br>
          </form>
-         <a href="http://192.168.70.137:9999/cgi/selectData">select</a>
-         <br>
-         <br>
-         <img src="/tupian/timg.jpg" alt="Mushroom">
-         <br><br>
     </body>
-</html>
+    </html>
+<!DOCTYPE html>
+<!--<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>div居于页面正中间</title>
+        <style type="text/css">
+*{
+    margin: 0;
+    padding: 0;
+    background-color: #EAEAEA;
+
+}
+        div{
+            width: 200px;
+            height: 200px;
+            background-color: #1E90FF;
+
+        }
+        .center-in-center{
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            -moz-transform: translate(-50%, -50%);
+            -ms-transform: translate(-50%, -50%);
+            -o-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+
+        }
+        </style>
+        </meta>
+        <body>
+            <div class="center-in-center"></div>
+        </body>
+    </head>--!>
 

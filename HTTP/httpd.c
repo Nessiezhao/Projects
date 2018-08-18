@@ -55,6 +55,7 @@ static int startup(int port)
     if(listen(sock,5) < 0)//监听
     {
         perror("listen");
+
         exit(4);
     }
     return sock;

@@ -16,10 +16,10 @@ void SelectData()
         printf("connect failed!\n");//数据库连接失败
         return;
     }
-    printf("connect mysql success!\n");
+    //printf("connect mysql success!\n");
     //下发sql命令
     char sql[1024];
-    sprintf(sql,"select * from studet_info");
+    sprintf(sql,"select * from student_info");
     mysql_query(mysql_fd,sql);
     //读取结果
     MYSQL_RES* res = mysql_store_result(mysql_fd);
@@ -30,10 +30,14 @@ void SelectData()
     //获取当前表对应的列名
     MYSQL_FIELD* field = mysql_fetch_fields(res);
     int i = 0;
+    printf("<table border=\"1\">");
+        printf("<tr>");
     for(;i < col;i++)
     {
         printf("%s\t",field[i].name);
     }
+        printf("</tr>");
+    printf("</table>");
     printf("\n");
     printf("<table border=\"1\">");
     for(i = 0;i < row;i++)
@@ -71,7 +75,7 @@ int main()
             }
         }
     }
-    printf("arg:%s\n",data);
+    //printf("arg:%s\n",data);
     SelectData();
     return 0;
 }

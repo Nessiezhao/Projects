@@ -17,13 +17,13 @@ void InsertData(char* name,char* sex,char* phone)
         printf("connect failed!\n");//数据库连接失败
         return;
     }
-    printf("connect mysql success!\n");
+    //printf("connect mysql success!\n");
     //下发sql命令
     char sql[1024];
     sprintf(sql,"insert into student_info(name,sex,phone)values(\"%s\",\"%s\",\"%s\")",name,sex,phone);
-    printf("sql = %s\n",sql);
+    //printf("sql = %s\n",sql);
     mysql_query(mysql_fd,sql);
-    printf("sql:%s\n",sql);
+    //printf("sql:%s\n",sql);
     mysql_close(mysql_fd);//关闭mysql文件描述符
 }
 //#define asd
@@ -53,7 +53,7 @@ int main()
             }
         }
     }
-    printf("arg:%s\n",data);
+    //printf("arg:%s\n",data);
     char* name;
     char* sex;
     char* phone;
@@ -64,7 +64,7 @@ int main()
     strtok(NULL,"=&");
     phone = strtok(NULL,"=&");
 
-    printf("name = %s,sex = %s,phone = %s\n",name,sex,phone);
+    //printf("name = %s,sex = %s,phone = %s\n",name,sex,phone);
     InsertData(name,sex,phone);
     return 0;
 }
