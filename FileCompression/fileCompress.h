@@ -1,5 +1,7 @@
 #pragma once
 #include<iostream>
+#include<stdio.h>
+#include<stdlib.h>
 #include<string>
 #include<assert.h>
 #include"./huffman.hpp"
@@ -59,7 +61,7 @@ public:
                 HuffmanTreeNode<CharInfo>* pCur = pRoot;
                 HuffmanTreeNode<CharInfo>* pParent = pCur->_pParent;
 
-                string& strCode = _charInfo[pCur->_weight._ch]._strCode;
+                string& strCode = _charInfo[(int)pCur->_weight._ch]._strCode;
                 while(pParent)
                 {
                     if(pCur == pParent->_pLeft)
@@ -69,7 +71,7 @@ public:
                     pCur = pParent;
                     pParent = pCur->_pParent;
                 }
-                reverse(strCode.begin(),strCode.end());
+                strCode.reserve();
             }
         }
     }
@@ -77,7 +79,7 @@ public:
     void CompressFile(const string& filePath)
     {
         //1.读取源文件，统计每个字符出现的次数
-        FILE* fIn = fopen(filePath.c_str,"r");
+        FILE* fIn = fopen(filePath.c_str(),"r");
         if(fIn == NULL)
         {
             cout<< "找不到该文件"<<endl;
@@ -93,7 +95,7 @@ public:
 
             for(size_t i = 0; i < readSize; ++i)
             {
-                _charInfo[pReadBuff[i]]._count++;//或取到每个字符出现的次数
+                _charInfo[(int)pReadBuff[i]]._count++;//或取到每个字符出现的次数
             }
 
         }
@@ -109,7 +111,7 @@ public:
         string filePostFix = GetFilePostFix(filePath);
         //编码的信息
         string strCodeInfo;
-        char strCount[32] = {0}//用来存放每个字符出现的次数
+        char strCount[32] = {0};//用来存放每个字符出现的次数
         size_t LineCount = 0;//有效字符的行数
         for(size_t i = 0; i < 256; ++i)
         {
@@ -149,7 +151,7 @@ public:
 
             for(size_t i = 0; i < readSize; ++i)
             {
-                string& strCode = _charInfo[pReadBuff[i]]._strCode;
+                string& strCode = _charInfo[(int)pReadBuff[i]]._strCode;
                 for(size_t j = 0; j < strCode.size(); ++j)
                 {
                     c <<= 1;
@@ -209,7 +211,7 @@ public:
         {
             strCodeInfo = "";
             ReadLine(fIn,strCodeInfo);
-            _charInfo[strCodeInfo[0]]._count = atoi(strCodeInfo.c_str() + 2);
+            _charInfo[(int)strCodeInfo[0]]._count = atoi(strCodeInfo.c_str() + 2);
         }
 
         HuffmanTree<CharInfo> ht(_charInfo,256,CharInfo(0));
@@ -224,7 +226,7 @@ public:
        //读取压缩信息
        char* pReadBuff = new char[1024];
        char* pWriteBuff = new char[1024];
-       szie_t writeSize = 0;
+       size_t writeSize = 0;
        size_t pos = 8;
        size_t fileSize = pCur->_weight._count;
 
@@ -286,3 +288,10 @@ public:
 private:
     CharInfo _charInfo[256]; 
 };
+
+
+void Test()
+{
+    FileCompress f;
+    f.CompressFile("text.txt");
+}
