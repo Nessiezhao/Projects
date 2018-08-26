@@ -1,4 +1,5 @@
 #include<iostream>
+#include"./Heap.hpp"
 template<class W>
 struct HuffmanTreeNode
 {
@@ -26,18 +27,67 @@ public:
 
     HuffmanTree(W* array,size_t size,const W& invalid)
     {
-        _CreateHuffmanTree(array,size,invalid);
+        //_CreateHuffmanTree(array,size,invalid);
+        //贪心算法
+        struct NodeCompare
+        {
+            bool operator()(PNode* l,PNode* r)
+            {
+                return l->_weight < r->_weight;
+            }
+        };
+
+        //建小堆
+        Heap<PNode*,NodeCompare> min;
+        for(size_t i = 0; i < size; i++)
+        {
+            if(array[i] != invalid)
+            {
+                min.Push(new PNode(array[i]));
+            }
+        }
+
+        //每次取最小，直到只剩一个节点时
+        while(min.size() > 1)
+        {
+            PNode* num1 = min.Top();
+            min.Pop();
+            PNode* num2 = min.Top();
+            min.Pop();
+
+            PNode* tmp = new PNode(num1->_weight + num2->_weight);
+            tmp->_pLeft = num1;
+            tmp->_pRight = num2;
+            num1->_pParent = tmp;
+            num2->_pParent = tmp;
+            min.Push(tmp);
+        }
+        _pRoot = min.Top();
+    }
+
+    void _Destroy(PNode* root)
+    {
+        if(root == NULL)
+            return;
+        _Destroy(root->_pLeft);
+        _Destroy(root->_pRight);
+        delete root;
     }
 
     ~HuffmanTree()
     {
         _Destroy(_pRoot);
+        _pRoot = NULL;
     }
 
-    PNode GetRoot()
+    PNode& GetRoot()
     {
-        return _pRoot;
+        return *_pRoot;
     }
+
+protected:
+    HuffmanTree(const HuffmanTree&);//防拷贝
+    HuffmanTree& operator=(const HuffmanTree&);
 private:
     PNode* _pRoot;
 };
