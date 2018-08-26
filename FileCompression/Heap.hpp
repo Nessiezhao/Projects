@@ -62,6 +62,57 @@ public:
         _a.pop_back();
         _Adjustdown(0);
     }
+
+    const T& Top()
+    {
+        return _a[0];
+    }
+
+protected:
+    void _Adjustup(int child)
+    {
+        Comper com;
+        int parent = (child-1)/2;
+        int _child = child;
+        while(parent >= 0)
+        {
+            if(com(_a[_child],_a[parent]))
+            {
+                swap(_a[_child],_a[parent]);
+                _child = parent;
+                parent = (_child -1)/2;
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
+
+    void _Adjustdown(int root)//遍历一次的要求是将最后一个数找到
+    {
+        //创建对象
+        Comper com;
+        int parent = root;
+        int child = root*2 + 1;
+        while(child < (int)_a.size())
+        {
+            if(child+1 < (int)_a.size() && com(_a[child+1],_a[child]))
+            {
+                ++child;
+            }
+            if(com(_a[child],_a[parent]))
+            {
+                swap(_a[parent],_a[child]);
+                parent = child;
+                child = parent*2 + 1;
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
 protected:
     vector<T> _a;
 };
