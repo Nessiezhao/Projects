@@ -36,7 +36,7 @@
 </tr>
 <br>
 <br>
-<div class="mdui-center" style="width: 200px"><button class="mdui-btn mdui-btn-raised"><a href="http://192.168.43.95:8080/test.txt" download="Student Infor.txt">DownLoad</a></button></div>
+<div class="mdui-center" style="width: 200px"><button class="mdui-btn mdui-btn-raised"><a href="http://192.168.43.95:8080/text.txt" download="Student Infor.txt">DownLoad</a></button></div>
 
 </body>
 </html>

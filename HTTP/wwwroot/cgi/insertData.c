@@ -3,6 +3,7 @@
 #include<string.h>
 #include<unistd.h>
 #include<mysql.h>
+#include<fcntl.h>
 
 void InsertData(char* name,char* sex,char* phone)
 {
@@ -66,6 +67,11 @@ int main()
 
     //printf("name = %s,sex = %s,phone = %s\n",name,sex,phone);
     InsertData(name,sex,phone);
+    int fd = open("./wwwroot/text.txt",O_WRONLY|O_APPEND);
+    char buf[1024] = {0};
+    sprintf(buf,"[name:%s],[sex:%s],[phone:%s]\n",name,sex,phone);
+    write(fd,buf,strlen(buf));
+    close(fd);
     return 0;
 }
 #endif
