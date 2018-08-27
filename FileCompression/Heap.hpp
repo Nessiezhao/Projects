@@ -21,12 +21,12 @@ struct Greater
     }
 };
 
-template<class T,class Comper = Greater<T>> 
+template<class T,class Comper = Greater<T> > 
 class Heap
 {
 public:
     Heap()
-        :_a(NULL)
+        :_a(0)
     {}
 
     Heap(T* a,size_t n)

@@ -1,9 +1,9 @@
-#pragma once
 #include<iostream>
 #include<stdio.h>
 #include<stdlib.h>
 #include<string>
 #include<assert.h>
+#include<algorithm>
 #include"./huffman.hpp"
 using namespace std;
 
@@ -61,7 +61,7 @@ public:
                 HuffmanTreeNode<CharInfo>* pCur = pRoot;
                 HuffmanTreeNode<CharInfo>* pParent = pCur->_pParent;
 
-                string& strCode = _charInfo[(int)pCur->_weight._ch]._strCode;
+                string& strCode = _charInfo[(unsigned char)pCur->_weight._ch]._strCode;
                 while(pParent)
                 {
                     if(pCur == pParent->_pLeft)
@@ -71,7 +71,7 @@ public:
                     pCur = pParent;
                     pParent = pCur->_pParent;
                 }
-                strCode.reserve();
+                reverse(strCode.begin(),strCode.end());
             }
         }
     }
@@ -95,7 +95,7 @@ public:
 
             for(size_t i = 0; i < readSize; ++i)
             {
-                _charInfo[(int)pReadBuff[i]]._count++;//或取到每个字符出现的次数
+                _charInfo[(unsigned char)pReadBuff[i]]._count++;//或取到每个字符出现的次数
             }
 
         }
@@ -119,7 +119,8 @@ public:
             {
                 strCodeInfo += _charInfo[i]._ch;
                 strCodeInfo += ',';
-                itoa(_charInfo[i]._count,strCount,10);
+                //itoa(_charInfo[i]._count,strCount,10);
+                sprintf(strCount,"%d",(int)_charInfo[i]._count);
                 strCodeInfo += strCount;
                 strCodeInfo += '\n';
                 LineCount++;
@@ -128,7 +129,8 @@ public:
         string strHeadInfo;
         strHeadInfo += filePostFix;
         strHeadInfo += '\n';
-        itoa(LineCount,strCount,10);
+        //itoa(LineCount,strCount,10);
+        sprintf(strCount,"%d",(int)LineCount);
         strHeadInfo += strCount;
         strHeadInfo += '\n';
         strHeadInfo += strCodeInfo;
@@ -151,7 +153,7 @@ public:
 
             for(size_t i = 0; i < readSize; ++i)
             {
-                string& strCode = _charInfo[(int)pReadBuff[i]]._strCode;
+                string& strCode = _charInfo[(unsigned char)pReadBuff[i]]._strCode;
                 for(size_t j = 0; j < strCode.size(); ++j)
                 {
                     c <<= 1;
@@ -211,11 +213,11 @@ public:
         {
             strCodeInfo = "";
             ReadLine(fIn,strCodeInfo);
-            _charInfo[(int)strCodeInfo[0]]._count = atoi(strCodeInfo.c_str() + 2);
+            _charInfo[(unsigned char)strCodeInfo[0]]._count = atoi(strCodeInfo.c_str() + 2);
         }
 
         HuffmanTree<CharInfo> ht(_charInfo,256,CharInfo(0));
-       HuffmanTree<CharInfo>* pCur = ht.GetRoot();
+       HuffmanTreeNode<CharInfo>* pCur = ht.GetRoot();
        string compressFilePath = GetFilePath(filePath);
        compressFilePath += strFilePostFix;
 
@@ -294,4 +296,5 @@ void Test()
 {
     FileCompress f;
     f.CompressFile("text.txt");
+    f.UnCompressFile("2.hzp");
 }
