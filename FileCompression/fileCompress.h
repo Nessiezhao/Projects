@@ -132,7 +132,7 @@ public:
         //itoa(LineCount,strCount,10);
         sprintf(strCount,"%d",(int)LineCount);
         strHeadInfo += strCount;
-        strHeadInfo += '\n';
+      //  strHeadInfo += '\n';
         strHeadInfo += strCodeInfo;
 
         //4.用每个字符的编码重新改写源文件
@@ -177,7 +177,7 @@ public:
         {
             pWriteBuff[writeSize++] = (c<<(8-pos));
         }
-        fwrite(pWriteBuff,1,1024,fOut);
+        fwrite(pWriteBuff,1,writeSize,fOut);
         fclose(fIn);
         fclose(fOut);
 
@@ -215,7 +215,6 @@ public:
             ReadLine(fIn,strCodeInfo);
             _charInfo[(unsigned char)strCodeInfo[0]]._count = atoi(strCodeInfo.c_str() + 2);
         }
-
         HuffmanTree<CharInfo> ht(_charInfo,256,CharInfo(0));
        HuffmanTreeNode<CharInfo>* pCur = ht.GetRoot();
        string compressFilePath = GetFilePath(filePath);
@@ -230,7 +229,7 @@ public:
        char* pWriteBuff = new char[1024];
        size_t writeSize = 0;
        size_t pos = 8;
-       size_t fileSize = pCur->_weight._count;
+       long long fileSize = pCur->_weight._count;
 
        while(true)
        {
@@ -242,6 +241,8 @@ public:
                pos = 8;
                while(pos--)
                {
+
+                        printf("%lu\n",pos);
                     if(pReadBuff[i] & (1<<pos))
                         pCur = pCur->_pRight;
                     else
@@ -259,7 +260,6 @@ public:
                             fwrite(pWriteBuff,1,writeSize,fOut);
                             break;
                         }
-
                         pCur = ht.GetRoot();
                     }
                }
