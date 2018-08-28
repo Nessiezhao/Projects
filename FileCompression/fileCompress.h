@@ -241,8 +241,6 @@ public:
                pos = 8;
                while(pos--)
                {
-
-                        printf("%lu\n",pos);
                     if(pReadBuff[i] & (1<<pos))
                         pCur = pCur->_pRight;
                     else

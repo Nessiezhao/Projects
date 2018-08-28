@@ -29,8 +29,6 @@ public:
     {
         _CreateHuffmanTree(array,size,invalid);
     }
-        //贪心算法
-        //建小堆
 
     void _Destroy(PNode* root)
     {
@@ -54,6 +52,7 @@ public:
 public:
     void _CreateHuffmanTree(W* array,size_t size,const W& invalid)
     {
+        //贪心算法
         struct NodeCompare
         {
             bool operator()(PNode* l,PNode* r)
@@ -62,6 +61,7 @@ public:
                 return l->_weight < r->_weight;
             }
         };
+        //建小堆
         Heap<PNode*,NodeCompare> min;
         for(size_t i = 0; i < size; i++)
         {
